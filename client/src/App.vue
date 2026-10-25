@@ -37,6 +37,26 @@ function ago(ts) {
   const m = Math.floor((Date.now() - ts) / 60000)
   return m < 60 ? m + 'm' : Math.floor(m / 60) + 'h'
 }
+
+function exportCsv() {
+  const rows = filtered.value
+  const header = ['id', 'src', 'dst', 'dstIp', 'proto', 'port', 'bytes', 'packets', 'threat', 'durationMs', 'startedAt']
+  const esc = (v) => {
+    const s = String(v ?? '')
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+  }
+  const lines = [
+    header.join(','),
+    ...rows.map((f) => header.map((k) => esc(f[k])).join(',')),
+  ]
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `flowscope-export-${new Date().toISOString().slice(0, 10)}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
 </script>
 
 <template>
@@ -49,7 +69,10 @@ function ago(ts) {
           <p>Network flow analyzer · talkers · threat tags</p>
         </div>
       </div>
-      <span class="pill">Demo telemetry</span>
+      <div class="head-actions">
+        <button type="button" class="export" @click="exportCsv">Export CSV</button>
+        <span class="pill">Demo telemetry</span>
+      </div>
     </header>
 
     <section class="kpis">
@@ -140,6 +163,12 @@ header { display: flex; justify-content: space-between; align-items: center; gap
 @keyframes sweep { 50% { opacity: 1; transform: scaleY(1.15); } }
 h1 { margin: 0; font-size: 1.3rem; letter-spacing: -.02em; }
 .brand p { margin: 4px 0 0; color: var(--muted); font-size: .85rem; }
+.head-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.export {
+  padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line);
+  font-weight: 600; font-size: .8rem; color: var(--text);
+  background: rgba(78,196,255,.08);
+}
 .pill {
   font-family: var(--mono); font-size: .72rem; color: var(--mint);
   border: 1px solid rgba(61,255,168,.3); padding: 7px 10px; border-radius: 999px;
